@@ -6,7 +6,9 @@ let sortDirection = {
     price: 1,
     change: 1,
     high: 1,
-    low:  1,
+    highPercent: 1,
+    low: 1,
+    lowPercent: 1,
     ath: 1,
     atl: 1
 };
@@ -23,7 +25,7 @@ function updateMarketStatus() {
     const statusElement = document.getElementById('marketStatus');
     if (statusElement) {
         statusElement.textContent = 'LIVE';
-        statusElement.style. color = 'var(--color-positive)';
+        statusElement.style.color = 'var(--color-positive)';
     }
 }
 
@@ -57,22 +59,34 @@ async function loadData() {
             throw new Error(`Binance API error: ${binanceResponse.status}`);
         }
 
-        const binanceData = await binanceResponse.json();
+        const binanceData = await binanceResponse. json();
         console.log('Binance data received:', binanceData. length, 'items');
         
-        // USDT perpetual futures filtrele
+        // USDT perpetual futures filtrele ve yüzdeleri hesapla
         const futuresCoins = binanceData
             .filter(coin => coin. symbol.endsWith('USDT'))
-            .map(coin => ({
-                symbol:  coin.symbol.replace('USDT', ''),
-                price: parseFloat(coin.lastPrice),
-                change: parseFloat(coin.priceChangePercent),
-                high: parseFloat(coin.highPrice),
-                low: parseFloat(coin.lowPrice),
-                volume: parseFloat(coin.volume),
-                ath: null,
-                atl: null
-            }));
+            .map(coin => {
+                const currentPrice = parseFloat(coin.lastPrice);
+                const high = parseFloat(coin.highPrice);
+                const low = parseFloat(coin.lowPrice);
+                
+                // High ve Low için yüzde hesapla
+                const highPercent = high > 0 ? ((high - currentPrice) / currentPrice) * 100 : 0;
+                const lowPercent = low > 0 ? ((currentPrice - low) / currentPrice) * 100 : 0;
+                
+                return {
+                    symbol:  coin.symbol. replace('USDT', ''),
+                    price: currentPrice,
+                    change: parseFloat(coin.priceChangePercent),
+                    high:  high,
+                    highPercent: highPercent,
+                    low: low,
+                    lowPercent: lowPercent,
+                    volume: parseFloat(coin.volume),
+                    ath: null,
+                    atl: null
+                };
+            });
 
         console.log('Filtered coins:', futuresCoins.length);
 
@@ -86,7 +100,9 @@ async function loadData() {
             'ATOM': 'cosmos', 'XLM': 'stellar', 'ETC': 'ethereum-classic',
             'BCH': 'bitcoin-cash', 'NEAR': 'near', 'APT': 'aptos',
             'FIL': 'filecoin', 'ARB': 'arbitrum', 'OP': 'optimism',
-            'INJ': 'injective-protocol', 'SUI': 'sui', 'PEPE': 'pepe'
+            'INJ': 'injective-protocol', 'SUI': 'sui', 'PEPE': 'pepe',
+            'WLD': 'worldcoin-wld', 'IMX': 'immutable-x', 'FET': 'fetch-ai',
+            'RUNE': 'thorchain', 'GALA': 'gala', 'SAND': 'the-sandbox'
         };
 
         const coinGeckoIds = Object.values(coinGeckoMap).join(',');
@@ -128,9 +144,9 @@ async function loadData() {
         coinsData = futuresCoins;
         filteredCoins = [... coinsData];
 
-        // Varsayılan sıralama:  değişime göre
+        // Varsayılan sıralama: değişime göre
         coinsData.sort((a, b) => b.change - a.change);
-        filteredCoins.sort((a, b) => b.change - a.change);
+        filteredCoins. sort((a, b) => b.change - a.change);
 
         console.log('Displaying coins.. .');
         displayCoins(filteredCoins);
@@ -140,7 +156,7 @@ async function loadData() {
         if (loading) loading.style.display = 'none';
         if (table) table.style.display = 'block';
         
-        console.log('Data loaded successfully! ');
+        console.log('Data loaded successfully!');
 
     } catch (err) {
         console.error('Error loading data:', err);
@@ -154,7 +170,7 @@ async function loadData() {
                 if (err.name === 'AbortError') {
                     errorText. textContent = '⏱️ Request timeout.  Please check your connection and try again.';
                 } else {
-                    errorText. textContent = `❌ ${err.message}.  Please try again.`;
+                    errorText. textContent = `❌ ${err.message}.  Please try again.';
                 }
             }
         }
@@ -165,35 +181,42 @@ async function loadData() {
 function displayCoins(coins) {
     const tbody = document.getElementById('coinsBody');
     if (!tbody) {
-        console.error('Table body not found! ');
+        console.error('Table body not found!');
         return;
     }
     
     tbody.innerHTML = '';
 
     if (coins.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">No coins found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: var(--text-secondary);">No coins found</td></tr>';
         return;
     }
 
     coins.forEach(coin => {
         const row = document.createElement('tr');
         
-        const changeClass = coin.change > 0 ? 'positive-change' :  
+        const changeClass = coin.change > 0 ? 'positive-change' : 
                            coin.change < 0 ? 'negative-change' : 'neutral-change';
         const changeSymbol = coin.change > 0 ? '+' : '';
 
-        const athDisplay = coin.ath ? `$${formatNumber(coin.ath)}` : '-';
-        const atlDisplay = coin.atl ? `$${formatNumber(coin.atl)}` : '-';
+        // High ve Low percent için class
+        const highPercentClass = coin.highPercent > 0 ? 'positive-change' : 'neutral-change';
+        const lowPercentClass = coin.lowPercent > 0 ? 'positive-change' : 'neutral-change';
+
+        // ATH ve ATL gösterimi
+        const athDisplay = coin.ath ? `<span class="ath-value">$${formatNumber(coin.ath)}</span>` : '<span style="color: var(--text-muted);">-</span>';
+        const atlDisplay = coin.atl ? `<span class="atl-value">$${formatNumber(coin.atl)}</span>` : '<span style="color: var(--text-muted);">-</span>';
 
         row.innerHTML = `
-            <td><div class="coin-symbol">${coin.symbol}</div></td>
+            <td class="sticky-col"><div class="coin-symbol">${coin.symbol}</div></td>
             <td class="text-right price">$${formatNumber(coin.price)}</td>
             <td class="text-right"><span class="change ${changeClass}">${changeSymbol}${coin.change. toFixed(2)}%</span></td>
             <td class="text-right">$${formatNumber(coin.high)}</td>
+            <td class="text-right hide-tablet"><span class="percent-badge ${highPercentClass}">+${coin.highPercent.toFixed(2)}%</span></td>
             <td class="text-right">$${formatNumber(coin.low)}</td>
-            <td class="text-right hide-mobile">${athDisplay}</td>
-            <td class="text-right hide-mobile">${atlDisplay}</td>
+            <td class="text-right hide-tablet"><span class="percent-badge ${lowPercentClass}">+${coin. lowPercent.toFixed(2)}%</span></td>
+            <td class="text-right">${athDisplay}</td>
+            <td class="text-right">${atlDisplay}</td>
         `;
 
         tbody.appendChild(row);
@@ -239,7 +262,7 @@ function formatNumber(num) {
     } else if (num >= 1) {
         return num.toFixed(4);
     } else {
-        return num.toFixed(6);
+        return num. toFixed(6);
     }
 }
 
@@ -250,8 +273,8 @@ function filterCoins() {
     
     const searchTerm = searchInput.value.toUpperCase();
     
-    let filtered = coinsData. filter(coin => 
-        coin.symbol.includes(searchTerm)
+    let filtered = coinsData.filter(coin => 
+        coin.symbol. includes(searchTerm)
     );
 
     // Mevcut filtreyi uygula
@@ -281,7 +304,7 @@ function filterByChange(type) {
         if ((type === 'all' && btn.textContent.includes('All')) ||
             (type === 'gainers' && btn.textContent.includes('Gainers')) ||
             (type === 'losers' && btn.textContent.includes('Losers'))) {
-            btn.classList.add('active');
+            btn.classList. add('active');
         }
     });
 
