@@ -5,9 +5,9 @@
     box-sizing: border-box;
 }
 
-:root {
+: root {
     --bg-primary: #0a0e17;
-    --bg-secondary: #131823;
+    --bg-secondary:  #131823;
     --bg-tertiary: #1a2030;
     --bg-card: rgba(19, 24, 35, 0.95);
     --bg-glass: rgba(255, 255, 255, 0.04);
@@ -16,16 +16,16 @@
     --accent-secondary: #764ba2;
     --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     
-    --text-primary: #f0f4ff;
-    --text-secondary: #a0aec0;
+    --text-primary:  #f0f4ff;
+    --text-secondary:  #a0aec0;
     --text-muted: #718096;
     
     --color-positive: #00d9a3;
-    --color-negative: #ff5370;
-    --color-neutral: #8a92a6;
+    --color-negative:  #ff5370;
+    --color-neutral:  #8a92a6;
     
     --bg-positive: rgba(0, 217, 163, 0.12);
-    --bg-negative: rgba(255, 83, 112, 0.12);
+    --bg-negative:  rgba(255, 83, 112, 0.12);
     
     --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.6);
@@ -39,7 +39,7 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg-primary);
+    background:  var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
     padding: 12px;
@@ -50,8 +50,8 @@ body {
 }
 
 /* ==================== BACKGROUND ANIMATION ==================== */
-.bg-animation {
-    position: fixed;
+. bg-animation {
+    position:  fixed;
     top: 0;
     left: 0;
     width: 100%;
@@ -69,7 +69,7 @@ body {
     animation: float 30s infinite ease-in-out;
 }
 
-.orb-1 {
+. orb-1 {
     width: 500px;
     height: 500px;
     background: radial-gradient(circle, #667eea 0%, transparent 70%);
@@ -88,7 +88,7 @@ body {
 }
 
 .orb-3 {
-    width: 600px;
+    width:  600px;
     height: 600px;
     background: radial-gradient(circle, #00d9a3 0%, transparent 70%);
     top: 50%;
@@ -124,38 +124,38 @@ body {
 .header {
     background: var(--bg-card);
     backdrop-filter: blur(24px);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 16px;
+    border:  1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
     box-shadow: var(--shadow-lg);
 }
 
 .header-content {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items:  center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 12px;
 }
 
 .logo-section {
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex: 1;
+    gap: 10px;
+    flex:  1;
     min-width: 0;
 }
 
 .logo-icon {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     background: var(--accent-gradient);
-    border-radius: 14px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 24px;
     box-shadow: var(--shadow-glow);
     flex-shrink: 0;
 }
@@ -166,8 +166,8 @@ body {
 }
 
 .logo-text h1 {
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 16px;
+    font-weight:  800;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -177,28 +177,28 @@ body {
 }
 
 .tagline {
-    font-size: 11px;
+    font-size:  10px;
     color: var(--text-secondary);
     font-weight: 500;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .update-badge {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
+    gap: 5px;
+    padding: 6px 10px;
     background: var(--bg-glass);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    font-size: 11px;
+    border-radius: 8px;
+    font-size:  10px;
     color: var(--text-secondary);
     white-space: nowrap;
 }
@@ -208,7 +208,7 @@ body {
     height: 6px;
     background: var(--color-positive);
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation:  pulse 2s infinite;
 }
 
 @keyframes pulse {
@@ -219,63 +219,63 @@ body {
 .btn-refresh {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
+    gap: 5px;
+    padding: 6px 12px;
     background: var(--accent-gradient);
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     color: white;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: var(--shadow-glow);
 }
 
 .btn-refresh:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(102, 126, 234, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
 }
 
 .btn-refresh:active {
     transform: translateY(0);
 }
 
-/* ==================== STATS GRID ==================== */
+/* ==================== STATS GRID (MOBİL İYİLEŞTİRİLDİ) ==================== */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
+    grid-template-columns:  repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom:  12px;
 }
 
 .stat-card {
-    padding: 16px;
-    border-radius: 16px;
+    padding: 12px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     transition: var(--transition);
-    min-height: 80px;
+    min-height: 70px;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: var(--shadow-lg);
     background: rgba(255, 255, 255, 0.06);
 }
 
 .stat-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.stat-icon.total {
+.stat-icon. total {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
@@ -293,8 +293,8 @@ body {
 
 .stat-icon svg {
     color: white;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .stat-details {
@@ -303,11 +303,11 @@ body {
 }
 
 .stat-value {
-    font-size: 24px;
-    font-weight: 800;
+    font-size: 20px;
+    font-weight:  800;
     color: var(--text-primary);
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .stat-value.positive-text {
@@ -319,21 +319,21 @@ body {
 }
 
 .stat-label {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-secondary);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
-/* ==================== CONTROLS SECTION ==================== */
-.controls-section {
-    padding: 16px;
-    border-radius: 16px;
-    margin-bottom: 16px;
+/* ==================== CONTROLS SECTION (MOBİL İYİLEŞTİRİLDİ) ==================== */
+. controls-section {
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .search-wrapper {
@@ -341,25 +341,25 @@ body {
     width: 100%;
 }
 
-.search-icon {
+. search-icon {
     position: absolute;
-    left: 14px;
+    left: 12px;
     top: 50%;
-    transform: translateY(-50%);
+    transform:  translateY(-50%);
     color: var(--text-muted);
     pointer-events: none;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
 }
 
 .search-input {
     width: 100%;
-    padding: 12px 14px 12px 44px;
+    padding: 10px 12px 10px 38px;
     background: var(--bg-secondary);
     border: 2px solid transparent;
-    border-radius: 12px;
+    border-radius: 10px;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     transition: var(--transition);
 }
@@ -368,10 +368,10 @@ body {
     outline: none;
     border-color: var(--accent-primary);
     background: var(--bg-primary);
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.search-input::placeholder {
+.search-input:: placeholder {
     color: var(--text-muted);
 }
 
@@ -382,13 +382,13 @@ body {
 }
 
 .filter-btn {
-    padding: 10px 12px;
+    padding: 9px 10px;
     background: var(--bg-secondary);
     border: 2px solid transparent;
-    border-radius: 10px;
+    border-radius: 9px;
     color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight:  600;
     cursor: pointer;
     transition: var(--transition);
     white-space: nowrap;
@@ -410,21 +410,21 @@ body {
 /* ==================== LOADING & ERROR ==================== */
 .loading-container, .error-container {
     text-align: center;
-    padding: 40px 20px;
+    padding: 30px 16px;
     background: var(--bg-card);
-    border-radius: 16px;
+    border-radius: 14px;
     border: 1px solid var(--border-color);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .loading-spinner {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: 3px solid var(--bg-secondary);
     border-top-color: var(--accent-primary);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
-    margin: 0 auto 16px;
+    margin: 0 auto 12px;
 }
 
 @keyframes spin {
@@ -433,43 +433,43 @@ body {
 
 .loading-text {
     color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight:  500;
 }
 
 .error-container svg {
     color: var(--color-negative);
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
-.error-container p {
+. error-container p {
     color: var(--text-secondary);
-    margin-bottom: 16px;
-    font-size: 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
 }
 
-.btn-retry {
-    padding: 10px 20px;
+. btn-retry {
+    padding: 9px 18px;
     background: var(--accent-gradient);
     border: none;
-    border-radius: 10px;
+    border-radius: 9px;
     color: white;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: var(--transition);
 }
 
 .btn-retry:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: var(--shadow-glow);
 }
 
-/* ==================== TABLE ==================== */
+/* ==================== TABLE (MOBİL OPTİMİZE) ==================== */
 .table-wrapper {
-    border-radius: 16px;
+    border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .table-scroll {
@@ -479,8 +479,8 @@ body {
 
 .data-table {
     width: 100%;
-    border-collapse: collapse;
-    min-width: 800px;
+    border-collapse:  collapse;
+    min-width: 700px;
 }
 
 .data-table thead {
@@ -488,22 +488,22 @@ body {
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index:  10;
 }
 
 .data-table th {
-    padding: 14px 12px;
-    text-align: left;
-    font-size: 10px;
-    font-weight: 700;
+    padding: 10px 8px;
+    text-align:  left;
+    font-size: 9px;
+    font-weight:  700;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
     user-select: none;
     white-space: nowrap;
 }
 
-.data-table th.sortable {
+.data-table th. sortable {
     cursor: pointer;
     transition: var(--transition);
 }
@@ -516,11 +516,11 @@ body {
 .data-table th > div {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     justify-content: space-between;
 }
 
-.data-table th.text-right > div {
+.data-table th. text-right > div {
     justify-content: flex-end;
 }
 
@@ -540,8 +540,8 @@ body {
 .sort-icon {
     opacity: 0.3;
     transition: var(--transition);
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
 }
 
 .sortable:hover .sort-icon {
@@ -558,8 +558,8 @@ body {
 }
 
 .data-table td {
-    padding: 14px 12px;
-    font-size: 13px;
+    padding: 10px 8px;
+    font-size: 12px;
     color: var(--text-primary);
     white-space: nowrap;
 }
@@ -575,27 +575,27 @@ body {
     z-index: 5;
 }
 
-.data-table tbody tr:hover td.sticky-col {
-    background: var(--bg-secondary);
+.data-table tbody tr:hover td. sticky-col {
+    background:  var(--bg-secondary);
 }
 
 .coin-symbol {
     font-weight: 700;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
-.coin-symbol::before {
+.coin-symbol:: before {
     content: '';
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     background: var(--accent-primary);
     border-radius: 50%;
     display: inline-block;
-    box-shadow: 0 0 8px var(--accent-primary);
+    box-shadow: 0 0 6px var(--accent-primary);
 }
 
 .price {
@@ -606,10 +606,10 @@ body {
 
 .change {
     display: inline-block;
-    padding: 5px 10px;
-    border-radius: 8px;
+    padding: 4px 8px;
+    border-radius: 7px;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
 }
 
@@ -630,39 +630,39 @@ body {
 
 .percent-badge {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 3px 7px;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 11px;
+    font-size: 10px;
     font-variant-numeric: tabular-nums;
 }
 
 .asian-fib-value {
     color: #a8b3ff;
     font-weight: 700;
-    font-size: 13px;
-    text-shadow: 0 0 12px rgba(168, 179, 255, 0.3);
+    font-size: 12px;
+    text-shadow: 0 0 10px rgba(168, 179, 255, 0.3);
 }
 
 .asian-col {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
 }
 
-/* ==================== FOOTER ==================== */
+/* ==================== FOOTER (MOBİL İYİLEŞTİRİLDİ) ==================== */
 .footer {
     text-align: center;
-    padding: 20px 16px;
+    padding: 16px 12px;
     background: var(--bg-card);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
+    border-radius: 14px;
     box-shadow: var(--shadow-md);
 }
 
 .footer-main {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .footer-main strong {
@@ -671,12 +671,12 @@ body {
 }
 
 .footer-disclaimer {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-muted);
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
-/* ==================== RESPONSIVE ==================== */
+/* ==================== RESPONSIVE (MOBİL TASARIM GELİŞTİRİLDİ) ==================== */
 @media (min-width: 640px) {
     body {
         padding: 20px;
@@ -684,24 +684,45 @@ body {
     
     .stats-grid {
         grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
+        gap: 14px;
     }
     
     .header {
-        padding: 24px;
-        border-radius: 24px;
+        padding: 20px;
+        border-radius: 20px;
     }
     
     .logo-text h1 {
-        font-size: 24px;
+        font-size: 22px;
     }
     
     .tagline {
+        font-size:  12px;
+    }
+    
+    .stat-card {
+        padding: 14px;
+        min-height: 80px;
+    }
+    
+    . stat-icon {
+        width:  42px;
+        height:  42px;
+    }
+    
+    .stat-value {
+        font-size: 22px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 12px 10px;
         font-size: 13px;
     }
 }
 
 @media (max-width: 639px) {
+    /* MOBİL:  Header optimize */
     .header-content {
         flex-direction: column;
         align-items: stretch;
@@ -713,45 +734,71 @@ body {
     }
     
     .update-badge {
-        flex: 1;
+        flex:  1;
+        justify-content: center;
     }
     
+    /* MOBİL: Stat cards küçültüldü */
     .stat-card {
-        padding: 14px;
+        padding: 10px;
+        min-height:  65px;
     }
     
     .stat-value {
-        font-size: 20px;
+        font-size: 18px;
     }
     
+    .stat-label {
+        font-size: 8px;
+    }
+    
+    /* MOBİL: Table optimize */
     .data-table {
-        min-width: 700px;
+        min-width: 650px;
     }
     
     .data-table th,
     .data-table td {
-        padding: 12px 8px;
-        font-size: 11px;
+        padding: 9px 6px;
+        font-size:  11px;
     }
     
     .coin-symbol {
-        font-size: 12px;
+        font-size: 11px;
+    }
+    
+    .price {
+        font-size: 11px;
+    }
+    
+    .change {
+        padding: 3px 6px;
+        font-size: 10px;
+    }
+    
+    .percent-badge {
+        padding: 2px 5px;
+        font-size:  9px;
+    }
+    
+    .asian-fib-value {
+        font-size: 11px;
     }
 }
 
-/* ==================== SCROLLBAR ==================== */
-.table-scroll::-webkit-scrollbar {
-    height: 8px;
+/* ==================== SCROLLBAR (MOBİL İYİLEŞTİRİLDİ) ==================== */
+. table-scroll::-webkit-scrollbar {
+    height: 6px;
 }
 
 .table-scroll::-webkit-scrollbar-track {
     background: var(--bg-secondary);
-    border-radius: 4px;
+    border-radius: 3px;
 }
 
 .table-scroll::-webkit-scrollbar-thumb {
     background: var(--accent-primary);
-    border-radius: 4px;
+    border-radius: 3px;
 }
 
 .table-scroll::-webkit-scrollbar-thumb:hover {
