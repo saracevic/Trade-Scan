@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance Perpetual Futures Pro Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-animation">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">₿</div>
+                    <div class="logo-text">
+                        <h1>Binance Futures Pro</h1>
+                        <p class="tagline">Real-time Perpetual Market Tracker</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="update-badge">
+                        <span class="pulse-dot"></span>
+                        <span id="lastUpdate">Loading...</span>
+                    </div>
+                    <button id="refreshBtn" class="btn-refresh" onclick="loadData()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M2. 5 22v-6h6M2 11.5a10 10 0 0 1 18. 8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card glass">
+                <div class="stat-icon total">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <div class="stat-value" id="totalCoins">-</div>
+                    <div class="stat-label">Total Pairs</div>
+                </div>
+            </div>
+
+            <div class="stat-card glass">
+                <div class="stat-icon positive">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <div class="stat-value positive-text" id="positiveCount">-</div>
+                    <div class="stat-label">Gainers 24h</div>
+                </div>
+            </div>
+
+            <div class="stat-card glass">
+                <div class="stat-icon negative">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                        <polyline points="17 18 23 18 23 12"></polyline>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <div class="stat-value negative-text" id="negativeCount">-</div>
+                    <div class="stat-label">Losers 24h</div>
+                </div>
+            </div>
+
+            <div class="stat-card glass">
+                <div class="stat-icon neutral">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div class="stat-details">
+                    <div class="stat-value" id="marketStatus">LIVE</div>
+                    <div class="stat-label">Market Status</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="controls-section glass">
+            <div class="search-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search coins (BTC, ETH, SOL... )" onkeyup="filterCoins()">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterByChange('all')">All</button>
+                <button class="filter-btn" onclick="filterByChange('gainers')">🚀 Gainers</button>
+                <button class="filter-btn" onclick="filterByChange('losers')">📉 Losers</button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading market data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error-container" style="display: none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p>Failed to load data. Please try again.</p>
+            <button onclick="loadData()" class="btn-retry">Retry</button>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-wrapper glass">
+            <table id="coinsTable" class="data-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('symbol')" class="sortable">
+                            <span>Coin</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                        <th onclick="sortTable('price')" class="sortable text-right">
+                            <span>Price</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                        <th onclick="sortTable('change')" class="sortable text-right">
+                            <span>24h Change</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                        <th onclick="sortTable('high')" class="sortable text-right">
+                            <span>24h High</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                        <th onclick="sortTable('low')" class="sortable text-right">
+                            <span>24h Low</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                        <th onclick="sortTable('ath')" class="sortable text-right hide-mobile">
+                            <span>ATH 🔥</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                        <th onclick="sortTable('atl')" class="sortable text-right hide-mobile">
+                            <span>ATL 📉</span>
+                            <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                            </svg>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="coinsBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p class="footer-main">⚡ Powered by <strong>Binance Futures API</strong> & <strong>CoinGecko</strong></p>
+                <p class="footer-disclaimer">⚠️ This is not financial advice. Always do your own research (DYOR).</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
