@@ -1,689 +1,326 @@
-/* ==================== RESET & BASE ==================== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+let coinsData = [];
+let filteredCoins = [];
+let currentFilter = 'all';
+let sortDirection = {
+    symbol: 1,
+    price: 1,
+    change: 1,
+    high: 1,
+    low:  1,
+    ath: 1,
+    atl: 1
+};
+
+// Sayfa yüklendiğinde
+window.addEventListener('load', () => {
+    console.log('Page loaded, starting data fetch...');
+    loadData();
+    updateMarketStatus();
+});
+
+// Market durumunu güncelle
+function updateMarketStatus() {
+    const statusElement = document.getElementById('marketStatus');
+    if (statusElement) {
+        statusElement.textContent = 'LIVE';
+        statusElement.style.color = 'var(--color-positive)';
+    }
 }
 
-: root {
-    /* Dark Theme Colors */
-    --bg-primary: #0a0e27;
-    --bg-secondary:  #131838;
-    --bg-card: rgba(23, 30, 60, 0.6);
-    --bg-glass: rgba(255, 255, 255, 0.05);
+// Verileri API'lerden çek (DÜZELTME: Timeout ve hata yönetimi)
+async function loadData() {
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const table = document.querySelector('.table-wrapper');
     
-    /* Accent Colors */
-    --accent-primary: #6366f1;
-    --accent-secondary: #8b5cf6;
-    --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    console.log('Loading data...');
     
-    /* Text Colors */
-    --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    if (loading) loading.style.display = 'block';
+    if (error) error.style.display = 'none';
+    if (table) table.style.display = 'none';
+
+    try {
+        // Timeout ekle (10 saniye)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        console.log('Fetching Binance data...');
+        
+        // Binance Futures API
+        const binanceResponse = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr', {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!binanceResponse.ok) {
+            throw new Error(`Binance API error: ${binanceResponse.status}`);
+        }
+
+        const binanceData = await binanceResponse.json();
+        console.log('Binance data received:', binanceData. length, 'items');
+        
+        // USDT perpetual futures filtrele
+        const futuresCoins = binanceData
+            .filter(coin => coin. symbol.endsWith('USDT'))
+            .map(coin => ({
+                symbol:  coin.symbol.replace('USDT', ''),
+                price:  parseFloat(coin.lastPrice),
+                change: parseFloat(coin.priceChangePercent),
+                high: parseFloat(coin.highPrice),
+                low: parseFloat(coin. lowPrice),
+                volume: parseFloat(coin.volume),
+                ath: null,
+                atl: null
+            }));
+
+        console.log('Filtered coins:', futuresCoins.length);
+
+        // CoinGecko API (ATH/ATL için) - Hata olsa bile devam et
+        const coinGeckoMap = {
+            'BTC': 'bitcoin', 'ETH': 'ethereum', 'BNB': 'binancecoin',
+            'XRP': 'ripple', 'ADA': 'cardano', 'DOGE': 'dogecoin',
+            'SOL': 'solana', 'TRX': 'tron', 'DOT': 'polkadot',
+            'MATIC': 'matic-network', 'LTC': 'litecoin', 'SHIB': 'shiba-inu',
+            'AVAX': 'avalanche-2', 'UNI': 'uniswap', 'LINK': 'chainlink',
+            'ATOM': 'cosmos', 'XLM': 'stellar', 'ETC': 'ethereum-classic',
+            'BCH': 'bitcoin-cash', 'NEAR': 'near', 'APT': 'aptos',
+            'FIL': 'filecoin', 'ARB': 'arbitrum', 'OP': 'optimism',
+            'INJ': 'injective-protocol', 'SUI': 'sui', 'PEPE': 'pepe'
+        };
+
+        const coinGeckoIds = Object.values(coinGeckoMap).join(',');
+        
+        try {
+            console.log('Fetching CoinGecko data...');
+            const geckoController = new AbortController();
+            const geckoTimeoutId = setTimeout(() => geckoController.abort(), 5000);
+
+            const geckoResponse = await fetch(
+                `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinGeckoIds}&order=market_cap_desc&sparkline=false`,
+                { signal: geckoController.signal }
+            );
+            
+            clearTimeout(geckoTimeoutId);
+
+            if (geckoResponse.ok) {
+                const geckoData = await geckoResponse.json();
+                console.log('CoinGecko data received:', geckoData.length, 'items');
+                
+                geckoData.forEach(geckoCoin => {
+                    const symbol = Object.keys(coinGeckoMap).find(
+                        key => coinGeckoMap[key] === geckoCoin.id
+                    );
+                    
+                    if (symbol) {
+                        const coin = futuresCoins.find(c => c.symbol === symbol);
+                        if (coin) {
+                            coin.ath = geckoCoin.ath;
+                            coin.atl = geckoCoin.atl;
+                        }
+                    }
+                });
+            }
+        } catch (geckoError) {
+            console. warn('CoinGecko data unavailable (continuing without ATH/ATL):', geckoError. message);
+        }
+
+        coinsData = futuresCoins;
+        filteredCoins = [... coinsData];
+
+        // Varsayılan sıralama:  değişime göre
+        coinsData.sort((a, b) => b.change - a.change);
+        filteredCoins.sort((a, b) => b.change - a.change);
+
+        console.log('Displaying coins.. .');
+        displayCoins(filteredCoins);
+        updateStats(coinsData);
+        updateLastUpdateTime();
+
+        if (loading) loading.style.display = 'none';
+        if (table) table.style.display = 'block';
+        
+        console.log('Data loaded successfully!');
+
+    } catch (err) {
+        console.error('Error loading data:', err);
+        
+        if (loading) loading.style.display = 'none';
+        if (error) {
+            error.style.display = 'block';
+            // Hata mesajını güncelle
+            const errorText = error.querySelector('p');
+            if (errorText) {
+                if (err.name === 'AbortError') {
+                    errorText. textContent = '⏱️ Request timeout.  Please check your connection and try again.';
+                } else {
+                    errorText. textContent = `❌ ${err.message}.  Please try again.`;
+                }
+            }
+        }
+    }
+}
+
+// Coinleri tabloda göster
+function displayCoins(coins) {
+    const tbody = document.getElementById('coinsBody');
+    if (!tbody) {
+        console.error('Table body not found! ');
+        return;
+    }
     
-    /* Status Colors */
-    --color-positive: #10b981;
-    --color-negative: #ef4444;
-    --color-neutral: #6366f1;
+    tbody.innerHTML = '';
+
+    if (coins.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">No coins found</td></tr>';
+        return;
+    }
+
+    coins.forEach(coin => {
+        const row = document.createElement('tr');
+        
+        const changeClass = coin.change > 0 ? 'positive-change' : 
+                           coin.change < 0 ? 'negative-change' : 'neutral-change';
+        const changeSymbol = coin.change > 0 ? '+' : '';
+
+        const athDisplay = coin.ath ? `$${formatNumber(coin.ath)}` : '-';
+        const atlDisplay = coin.atl ? `$${formatNumber(coin.atl)}` : '-';
+
+        row.innerHTML = `
+            <td><div class="coin-symbol">${coin.symbol}</div></td>
+            <td class="text-right price">$${formatNumber(coin.price)}</td>
+            <td class="text-right"><span class="change ${changeClass}">${changeSymbol}${coin.change. toFixed(2)}%</span></td>
+            <td class="text-right">$${formatNumber(coin.high)}</td>
+            <td class="text-right">$${formatNumber(coin.low)}</td>
+            <td class="text-right hide-mobile">${athDisplay}</td>
+            <td class="text-right hide-mobile">${atlDisplay}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+// İstatistikleri güncelle
+function updateStats(coins) {
+    const totalElement = document.getElementById('totalCoins');
+    const positiveElement = document.getElementById('positiveCount');
+    const negativeElement = document.getElementById('negativeCount');
     
-    /* Backgrounds for status */
-    --bg-positive:  rgba(16, 185, 129, 0.1);
-    --bg-negative: rgba(239, 68, 68, 0.1);
+    if (totalElement) totalElement.textContent = coins.length;
     
-    /* Shadows */
-    --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    const positive = coins.filter(c => c.change > 0).length;
+    const negative = coins.filter(c => c.change < 0).length;
     
-    /* Border */
-    --border-color: rgba(255, 255, 255, 0.1);
+    if (positiveElement) positiveElement.textContent = positive;
+    if (negativeElement) negativeElement.textContent = negative;
+}
+
+// Son güncelleme zamanı
+function updateLastUpdateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('tr-TR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        second:  '2-digit'
+    });
+    const element = document.getElementById('lastUpdate');
+    if (element) {
+        element.textContent = timeString;
+    }
+}
+
+// Sayı formatlama
+function formatNumber(num) {
+    if (num >= 1000) {
+        return num.toLocaleString('en-US', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        });
+    } else if (num >= 1) {
+        return num.toFixed(4);
+    } else {
+        return num.toFixed(6);
+    }
+}
+
+// Coin arama
+function filterCoins() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
     
-    /* Transitions */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    min-height: 100vh;
-    padding: 20px;
-    position: relative;
-    overflow-x: hidden;
-}
-
-/* ==================== BACKGROUND ANIMATION ==================== */
-. bg-animation {
-    position:  fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
-    pointer-events: none;
-}
-
-.gradient-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.3;
-    animation: float 20s infinite ease-in-out;
-}
-
-. orb-1 {
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, #667eea 0%, transparent 70%);
-    top: -250px;
-    left: -250px;
-    animation-delay:  0s;
-}
-
-. orb-2 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, #764ba2 0%, transparent 70%);
-    bottom: -200px;
-    right: -200px;
-    animation-delay: 7s;
-}
-
-.orb-3 {
-    width:  600px;
-    height: 600px;
-    background: radial-gradient(circle, #f093fb 0%, transparent 70%);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    animation-delay: 14s;
-}
-
-@keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(50px, -50px) scale(1.1); }
-    66% { transform: translate(-50px, 50px) scale(0.9); }
-}
-
-/* ==================== CONTAINER ==================== */
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
-}
-
-/* ==================== GLASS MORPHISM ==================== */
-.glass {
-    background: var(--bg-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-md);
-}
-
-/* ==================== HEADER ==================== */
-.header {
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border:  1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 24px 32px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-lg);
-}
-
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items:  center;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.logo-section {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.logo-icon {
-    width: 56px;
-    height: 56px;
-    background: var(--accent-gradient);
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    font-weight: bold;
-    color: white;
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-}
-
-.logo-text h1 {
-    font-size: 28px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 4px;
-}
-
-.tagline {
-    font-size:  14px;
-    color:  var(--text-secondary);
-    font-weight: 500;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.update-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: var(--bg-glass);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-.pulse-dot {
-    width: 8px;
-    height: 8px;
-    background: var(--color-positive);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
-}
-
-.btn-refresh {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: var(--accent-gradient);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: var(--transition);
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-}
-
-.btn-refresh:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
-
-.btn-refresh:active {
-    transform: translateY(0);
-}
-
-/* ==================== STATS GRID ==================== */
-.stats-grid {
-    display: grid;
-    grid-template-columns:  repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
-}
-
-.stat-card {
-    padding: 24px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: var(--transition);
-}
-
-.stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
-
-.stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.stat-icon. total {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.positive {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-
-.stat-icon. negative {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-}
-
-.stat-icon.neutral {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-}
-
-.stat-icon svg {
-    color: white;
-}
-
-.stat-details {
-    flex: 1;
-}
-
-.stat-value {
-    font-size: 32px;
-    font-weight:  800;
-    color: var(--text-primary);
-    line-height: 1;
-    margin-bottom: 6px;
-}
-
-.stat-value.positive-text {
-    color: var(--color-positive);
-}
-
-.stat-value.negative-text {
-    color: var(--color-negative);
-}
-
-.stat-label {
-    font-size: 13px;
-    color: var(--text-secondary);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* ==================== CONTROLS SECTION ==================== */
-.controls-section {
-    padding: 24px;
-    border-radius: 20px;
-    margin-bottom: 24px;
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.search-wrapper {
-    flex: 1;
-    min-width: 280px;
-    position: relative;
-}
-
-. search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    pointer-events: none;
-}
-
-.search-input {
-    width: 100%;
-    padding:  14px 16px 14px 48px;
-    background: var(--bg-secondary);
-    border: 2px solid transparent;
-    border-radius: 12px;
-    color: var(--text-primary);
-    font-size: 15px;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    background: var(--bg-primary);
-}
-
-.search-input::placeholder {
-    color: var(--text-muted);
-}
-
-.filter-buttons {
-    display: flex;
-    gap: 8px;
-}
-
-.filter-btn {
-    padding: 10px 18px;
-    background: var(--bg-secondary);
-    border: 2px solid transparent;
-    border-radius: 10px;
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.filter-btn:hover {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-}
-
-.filter-btn.active {
-    background: var(--accent-gradient);
-    color: white;
-    border-color: var(--accent-primary);
-}
-
-/* ==================== LOADING & ERROR ==================== */
-.loading-container, .error-container {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid var(--bg-secondary);
-    border-top-color: var(--accent-primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.loading-text {
-    color: var(--text-secondary);
-    font-size: 16px;
-}
-
-.error-container svg {
-    color: var(--color-negative);
-    margin-bottom: 16px;
-}
-
-. error-container p {
-    color: var(--text-secondary);
-    margin-bottom: 20px;
-}
-
-. btn-retry {
-    padding: 12px 24px;
-    background: var(--accent-gradient);
-    border: none;
-    border-radius: 10px;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-retry:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-/* ==================== TABLE ==================== */
-.table-wrapper {
-    border-radius: 20px;
-    overflow: hidden;
-    margin-bottom: 24px;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse:  collapse;
-}
-
-.data-table thead {
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.data-table th {
-    padding: 18px 20px;
-    text-align:  left;
-    font-size: 12px;
-    font-weight:  700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    user-select: none;
-}
-
-.data-table th. sortable {
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.data-table th.sortable:hover {
-    color: var(--text-primary);
-    background: var(--bg-primary);
-}
-
-.data-table th.sortable {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: space-between;
-}
-
-.data-table th.text-right {
-    text-align: right;
-    justify-content: flex-end;
-}
-
-.sort-icon {
-    opacity: 0.5;
-    transition: var(--transition);
-}
-
-.sortable: hover .sort-icon {
-    opacity: 1;
-}
-
-.data-table tbody tr {
-    border-bottom: 1px solid var(--border-color);
-    transition: var(--transition);
-}
-
-.data-table tbody tr:hover {
-    background: var(--bg-secondary);
-}
-
-.data-table td {
-    padding: 18px 20px;
-    font-size: 15px;
-    color: var(--text-primary);
-}
-
-.data-table td.text-right {
-    text-align: right;
-}
-
-.coin-symbol {
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.coin-symbol:: before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: var(--accent-primary);
-    border-radius: 50%;
-    display: inline-block;
-}
-
-. price {
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
-.change {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-}
-
-.positive-change {
-    background: var(--bg-positive);
-    color: var(--color-positive);
-}
-
-.negative-change {
-    background: var(--bg-negative);
-    color: var(--color-negative);
-}
-
-.neutral-change {
-    background: rgba(100, 116, 139, 0.1);
-    color: var(--text-muted);
-}
-
-/* ==================== FOOTER ==================== */
-.footer {
-    text-align: center;
-    padding: 32px 20px;
-    background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    box-shadow: var(--shadow-md);
-}
-
-.footer-main {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-bottom:  8px;
-}
-
-.footer-main strong {
-    color: var(--text-primary);
-    font-weight: 700;
-}
-
-.footer-disclaimer {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 1024px) {
-    .hide-mobile {
-        display: none;
-    }
-}
-
-@media (max-width:  768px) {
-    body {
-        padding: 10px;
+    const searchTerm = searchInput.value. toUpperCase();
+    
+    let filtered = coinsData.filter(coin => 
+        coin.symbol.includes(searchTerm)
+    );
+
+    // Mevcut filtreyi uygula
+    if (currentFilter === 'gainers') {
+        filtered = filtered.filter(c => c.change > 0);
+    } else if (currentFilter === 'losers') {
+        filtered = filtered.filter(c => c.change < 0);
     }
 
-    .header {
-        padding: 20px;
-        border-radius: 16px;
-    }
-
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .logo-icon {
-        width: 48px;
-        height: 48px;
-        font-size: 28px;
-    }
-
-    .logo-text h1 {
-        font-size: 22px;
-    }
-
-    . stats-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
-
-    . stat-card {
-        padding:  16px;
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .stat-value {
-        font-size: 24px;
-    }
-
-    .controls-section {
-        flex-direction: column;
-        padding: 16px;
-    }
-
-    .search-wrapper {
-        width: 100%;
-    }
-
-    .filter-buttons {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .filter-btn {
-        flex: 1;
-        padding: 10px 12px;
-        font-size: 12px;
-    }
-
-    .data-table th,
-    .data-table td {
-        padding: 12px 10px;
-        font-size: 13px;
-    }
-
-    . coin-symbol {
-        font-size: 14px;
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-    }
+    filteredCoins = filtered;
+    displayCoins(filteredCoins);
+    updateStats(filteredCoins);
 }
 
-@media (max-width:  480px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
+// Değişime göre filtrele
+function filterByChange(type) {
+    currentFilter = type;
+    
+    // Buton aktif durumunu güncelle
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Event'ten gelen butonu bul ve aktif yap
+    const buttons = document.querySelectorAll('. filter-btn');
+    buttons.forEach(btn => {
+        if ((type === 'all' && btn.textContent.includes('All')) ||
+            (type === 'gainers' && btn.textContent.includes('Gainers')) ||
+            (type === 'losers' && btn.textContent.includes('Losers'))) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Filtreyi uygula
+    if (type === 'gainers') {
+        filteredCoins = coinsData.filter(c => c.change > 0);
+    } else if (type === 'losers') {
+        filteredCoins = coinsData.filter(c => c.change < 0);
+    } else {
+        filteredCoins = [... coinsData];
     }
 
-    .data-table th,
-    .data-table td {
-        padding:  10px 8px;
-        font-size: 12px;
-    }
+    displayCoins(filteredCoins);
+    updateStats(filteredCoins);
 }
+
+// Tablo sıralama
+function sortTable(column) {
+    const direction = sortDirection[column];
+    
+    filteredCoins.sort((a, b) => {
+        if (column === 'symbol') {
+            return direction * a[column].localeCompare(b[column]);
+        }
+        
+        // Null değerleri sona at
+        if (a[column] === null && b[column] === null) return 0;
+        if (a[column] === null) return 1;
+        if (b[column] === null) return -1;
+        
+        return direction * (a[column] - b[column]);
+    });
+
+    sortDirection[column] *= -1;
+    displayCoins(filteredCoins);
+}
+
+// Otomatik yenileme (60 saniye)
+setInterval(() => {
+    console.log('Auto-refresh triggered');
+    loadData();
+}, 60000);
