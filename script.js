@@ -42,9 +42,9 @@ async function loadData() {
     if (table) table.style.display = 'none';
 
     try {
-        // Timeout ekle (10 saniye)
+        // Timeout ekle (15 saniye)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         console.log('Fetching Binance data...');
         
@@ -59,12 +59,12 @@ async function loadData() {
             throw new Error(`Binance API error: ${binanceResponse.status}`);
         }
 
-        const binanceData = await binanceResponse. json();
-        console.log('Binance data received:', binanceData. length, 'items');
+        const binanceData = await binanceResponse.json();
+        console.log('Binance data received:', binanceData.length, 'items');
         
         // USDT perpetual futures filtrele ve yüzdeleri hesapla
         const futuresCoins = binanceData
-            .filter(coin => coin. symbol.endsWith('USDT'))
+            .filter(coin => coin.symbol.endsWith('USDT'))
             .map(coin => {
                 const currentPrice = parseFloat(coin.lastPrice);
                 const high = parseFloat(coin.highPrice);
@@ -75,10 +75,10 @@ async function loadData() {
                 const lowPercent = low > 0 ? ((currentPrice - low) / currentPrice) * 100 : 0;
                 
                 return {
-                    symbol:  coin.symbol. replace('USDT', ''),
+                    symbol: coin.symbol.replace('USDT', ''),
                     price: currentPrice,
                     change: parseFloat(coin.priceChangePercent),
-                    high:  high,
+                    high: high,
                     highPercent: highPercent,
                     low: low,
                     lowPercent: lowPercent,
@@ -110,7 +110,7 @@ async function loadData() {
         try {
             console.log('Fetching CoinGecko data...');
             const geckoController = new AbortController();
-            const geckoTimeoutId = setTimeout(() => geckoController.abort(), 5000);
+            const geckoTimeoutId = setTimeout(() => geckoController.abort(), 8000);
 
             const geckoResponse = await fetch(
                 `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinGeckoIds}&order=market_cap_desc&sparkline=false`,
@@ -138,17 +138,17 @@ async function loadData() {
                 });
             }
         } catch (geckoError) {
-            console. warn('CoinGecko data unavailable (continuing without ATH/ATL):', geckoError. message);
+            console.warn('CoinGecko data unavailable (continuing without ATH/ATL):', geckoError.message);
         }
 
         coinsData = futuresCoins;
-        filteredCoins = [... coinsData];
+        filteredCoins = [...coinsData];
 
         // Varsayılan sıralama: değişime göre
         coinsData.sort((a, b) => b.change - a.change);
-        filteredCoins. sort((a, b) => b.change - a.change);
+        filteredCoins.sort((a, b) => b.change - a.change);
 
-        console.log('Displaying coins.. .');
+        console.log('Displaying coins...');
         displayCoins(filteredCoins);
         updateStats(coinsData);
         updateLastUpdateTime();
@@ -168,9 +168,9 @@ async function loadData() {
             const errorText = error.querySelector('p');
             if (errorText) {
                 if (err.name === 'AbortError') {
-                    errorText. textContent = '⏱️ Request timeout.  Please check your connection and try again.';
+                    errorText.textContent = '⏱️ Request timeout. Please check your connection and try again.';
                 } else {
-                    errorText. textContent = `❌ ${err.message}.  Please try again.';
+                    errorText.textContent = `❌ ${err.message}. Please try again.`;
                 }
             }
         }
@@ -210,11 +210,11 @@ function displayCoins(coins) {
         row.innerHTML = `
             <td class="sticky-col"><div class="coin-symbol">${coin.symbol}</div></td>
             <td class="text-right price">$${formatNumber(coin.price)}</td>
-            <td class="text-right"><span class="change ${changeClass}">${changeSymbol}${coin.change. toFixed(2)}%</span></td>
+            <td class="text-right"><span class="change ${changeClass}">${changeSymbol}${coin.change.toFixed(2)}%</span></td>
             <td class="text-right">$${formatNumber(coin.high)}</td>
             <td class="text-right hide-tablet"><span class="percent-badge ${highPercentClass}">+${coin.highPercent.toFixed(2)}%</span></td>
             <td class="text-right">$${formatNumber(coin.low)}</td>
-            <td class="text-right hide-tablet"><span class="percent-badge ${lowPercentClass}">+${coin. lowPercent.toFixed(2)}%</span></td>
+            <td class="text-right hide-tablet"><span class="percent-badge ${lowPercentClass}">+${coin.lowPercent.toFixed(2)}%</span></td>
             <td class="text-right">${athDisplay}</td>
             <td class="text-right">${atlDisplay}</td>
         `;
@@ -262,7 +262,7 @@ function formatNumber(num) {
     } else if (num >= 1) {
         return num.toFixed(4);
     } else {
-        return num. toFixed(6);
+        return num.toFixed(6);
     }
 }
 
@@ -274,7 +274,7 @@ function filterCoins() {
     const searchTerm = searchInput.value.toUpperCase();
     
     let filtered = coinsData.filter(coin => 
-        coin.symbol. includes(searchTerm)
+        coin.symbol.includes(searchTerm)
     );
 
     // Mevcut filtreyi uygula
@@ -299,12 +299,12 @@ function filterByChange(type) {
     });
     
     // Event'ten gelen butonu bul ve aktif yap
-    const buttons = document.querySelectorAll('. filter-btn');
+    const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
         if ((type === 'all' && btn.textContent.includes('All')) ||
             (type === 'gainers' && btn.textContent.includes('Gainers')) ||
             (type === 'losers' && btn.textContent.includes('Losers'))) {
-            btn.classList. add('active');
+            btn.classList.add('active');
         }
     });
 
@@ -314,7 +314,7 @@ function filterByChange(type) {
     } else if (type === 'losers') {
         filteredCoins = coinsData.filter(c => c.change < 0);
     } else {
-        filteredCoins = [... coinsData];
+        filteredCoins = [...coinsData];
     }
 
     displayCoins(filteredCoins);
