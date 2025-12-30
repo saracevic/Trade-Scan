@@ -24,56 +24,55 @@ function updateMarketStatus() {
     }
 }
 
-// Asian Range %50 Fib hesapla (Son Cuma'nın Asian Session: 00:00-08:00 UTC)
+// Asian Range %50 Fib hesapla (Perşembe 19:00-00:00 New York saati)
 function calculateAsianRangeFib(klines) {
     if (!klines || klines.length === 0) return null;
     
-    // Son Cuma'yı bul - daha esnek yaklaşım
-    let lastFridayCandles = [];
-    let currentDate = new Date();
-    let searchDays = 0;
+    // Son Perşembe'yi bul (New York saatine göre 19:00-00:00)
+    // New York UTC-5 (veya UTC-4 DST), yani UTC 00:00-05:00 = NY 19:00-00:00
+    let thursdayCandles = [];
+    let foundThursday = false;
     
-    // Son 14 gün içinde Cuma ara
-    for (let i = klines.length - 1; i >= 0 && searchDays < 14; i--) {
+    for (let i = klines.length - 1; i >= 0; i--) {
         const timestamp = klines[i][0];
         const date = new Date(timestamp);
-        const dayOfWeek = date.getUTCDay();
-        const hour = date.getUTCHours();
         
-        // Cuma günü (5) - tüm saatler
-        if (dayOfWeek === 5) {
-            // Asian Session saatleri tercih et ama yoksa tüm günü al
-            if (hour >= 0 && hour < 8) {
-                lastFridayCandles.push(klines[i]);
-            } else if (lastFridayCandles.length === 0) {
-                // Asian session verisi yoksa normal Cuma verilerini al
-                lastFridayCandles.push(klines[i]);
+        // UTC saatini New York saatine çevir (UTC-5)
+        const nyHour = (date.getUTCHours() - 5 + 24) % 24;
+        const nyDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
+        const nyDayOfWeek = nyDate.getDay();
+        
+        // Perşembe günü (4) ve NY saati 19:00-23:59 (00:00'a kadar)
+        if (nyDayOfWeek === 4) {
+            foundThursday = true;
+            if (nyHour >= 19 && nyHour <= 23) {
+                thursdayCandles.push(klines[i]);
             }
+        } else if (foundThursday && nyDayOfWeek !== 4) {
+            // Perşembe'yi geçtik, dur
+            break;
         }
-        
-        searchDays++;
     }
     
-    // Eğer Cuma bulunamadıysa, son 8 saatlik veriyi al (fallback)
-    if (lastFridayCandles.length < 3) {
-        console.warn('Friday not found, using last 8 hours as fallback');
-        lastFridayCandles = klines.slice(-8);
+    // Eğer yeterli veri yoksa fallback
+    if (thursdayCandles.length < 3) {
+        console.warn('Not enough Thursday data, using last 5 hours');
+        thursdayCandles = klines.slice(-5);
     }
     
-    if (lastFridayCandles.length === 0) {
+    if (thursdayCandles.length === 0) {
         console.warn('No valid candle data found');
         return null;
     }
     
-    // Asian Session için Body High/Low hesapla
+    // Body High/Low hesapla
     let bodyHigh = -Infinity;
     let bodyLow = Infinity;
     
-    lastFridayCandles.forEach(candle => {
+    thursdayCandles.forEach(candle => {
         const open = parseFloat(candle[1]);
         const close = parseFloat(candle[4]);
         
-        // Body = Open ve Close arasındaki max/min
         const candleBodyHigh = Math.max(open, close);
         const candleBodyLow = Math.min(open, close);
         
@@ -90,7 +89,7 @@ function calculateAsianRangeFib(klines) {
     // 50% Fibonacci (midpoint)
     const asianRangeFib50 = (bodyHigh + bodyLow) / 2;
     
-    console.log(`✓ Asian Fib: High=${bodyHigh.toFixed(4)}, Low=${bodyLow.toFixed(4)}, 50%=${asianRangeFib50.toFixed(4)}, Candles=${lastFridayCandles.length}`);
+    console.log(`✓ Asian Fib (Thu 19-00 NY): High=${bodyHigh.toFixed(4)}, Low=${bodyLow.toFixed(4)}, 50%=${asianRangeFib50.toFixed(4)}, Candles=${thursdayCandles.length}`);
     
     return asianRangeFib50;
 }
@@ -140,33 +139,49 @@ async function loadData() {
 
         console.log('Filtered coins:', futuresCoins.length);
 
-        // Asian Range %50 Fib hesaplamaları (paralel)
+        // Asian Range %50 Fib hesaplamaları (paralel, batch processing)
         console.log('Calculating Asian Range 50% Fib for all pairs...');
         
-        const asianRangePromises = futuresCoins.slice(0, 100).map(async coin => {
-            try {
-                // Son 14 günlük 1 saatlik kline verisi (Son Cuma'yı yakalamak için)
-                const symbol = coin.symbol + 'USDT';
-                const klineResponse = await fetch(
-                    `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=336`
-                );
-                
-                if (klineResponse.ok) {
-                    const klines = await klineResponse.json();
-                    const asianFib = calculateAsianRangeFib(klines);
+        // Tüm coinler için hesapla, ancak batch'ler halinde (rate limit için)
+        const batchSize = 20;
+        const batches = [];
+        
+        for (let i = 0; i < Math.min(futuresCoins.length, 200); i += batchSize) {
+            batches.push(futuresCoins.slice(i, i + batchSize));
+        }
+        
+        for (const batch of batches) {
+            const promises = batch.map(async coin => {
+                try {
+                    const symbol = coin.symbol + 'USDT';
+                    const klineResponse = await fetch(
+                        `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=336`,
+                        { timeout: 5000 }
+                    );
                     
-                    const coinData = futuresCoins.find(c => c.symbol === coin.symbol);
-                    if (coinData && asianFib && asianFib > 0) {
-                        coinData.asianRangeFib = asianFib;
+                    if (klineResponse.ok) {
+                        const klines = await klineResponse.json();
+                        const asianFib = calculateAsianRangeFib(klines);
+                        
+                        if (asianFib && asianFib > 0) {
+                            coin.asianRangeFib = asianFib;
+                        } else {
+                            console.warn(`❌ ${coin.symbol}: Invalid Asian Fib calculated`);
+                        }
+                    } else {
+                        console.warn(`❌ ${coin.symbol}: API error ${klineResponse.status}`);
                     }
+                } catch (err) {
+                    console.warn(`❌ ${coin.symbol}: ${err.message}`);
                 }
-            } catch (err) {
-                console.warn(`Asian Range calculation failed for ${coin.symbol}:`, err.message);
-            }
-        });
-
-        // İlk 100 coin için Asian Range hesapla
-        await Promise.all(asianRangePromises);
+            });
+            
+            await Promise.all(promises);
+            // Rate limit için kısa bekleme
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        console.log(`✓ Asian Range calculated for ${futuresCoins.filter(c => c.asianRangeFib).length} coins`);
 
         coinsData = futuresCoins;
         filteredCoins = [...coinsData];
@@ -234,8 +249,11 @@ function displayCoins(coins) {
             
             // Current Price ile Asian Range Fib arasındaki % mesafe
             const distPercent = ((coin.price - coin.asianRangeFib) / coin.asianRangeFib) * 100;
+            
+            // Fiyat Asian Range'in ALTINDA ise - (negatif), ÜSTÜNDE ise + (pozitif)
             const distClass = distPercent >= 0 ? 'positive-change' : 'negative-change';
-            const distSymbol = distPercent >= 0 ? '+' : '';
+            const distSymbol = distPercent >= 0 ? '+' : ''; // Negatif zaten - işareti ile gelir
+            
             asianFibDistDisplay = `<span class="percent-badge ${distClass}">${distSymbol}${distPercent.toFixed(2)}%</span>`;
         }
 
