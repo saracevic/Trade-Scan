@@ -518,14 +518,10 @@ body {
     background: var(--bg-secondary);
 }
 
-.data-table th.ath-col {
-    background: var(--bg-ath);
-    color: var(--color-ath);
-}
-
-.data-table th.atl-col {
-    background: var(--bg-atl);
-    color: var(--color-atl);
+.data-table th.asian-col {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+    font-weight: 800;
 }
 
 .sort-icon {
@@ -625,16 +621,11 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-.ath-value {
-    color: var(--color-ath);
+.asian-fib-value {
+    color: #2196F3;
     font-weight: 700;
     font-size: 14px;
-}
-
-.atl-value {
-    color: var(--color-atl);
-    font-weight: 700;
-    font-size: 14px;
+    text-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
 }
 
 /* ==================== FOOTER ==================== */
@@ -671,7 +662,7 @@ body {
     }
     
     .data-table {
-        min-width: 900px;
+        min-width: 700px;
     }
 }
 
