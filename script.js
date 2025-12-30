@@ -23,11 +23,11 @@ function updateMarketStatus() {
     const statusElement = document.getElementById('marketStatus');
     if (statusElement) {
         statusElement.textContent = 'LIVE';
-        statusElement.style.color = 'var(--color-positive)';
+        statusElement.style. color = 'var(--color-positive)';
     }
 }
 
-// Verileri API'lerden çek (DÜZELTME: Timeout ve hata yönetimi)
+// Verileri API'lerden çek
 async function loadData() {
     const loading = document.getElementById('loading');
     const error = document.getElementById('error');
@@ -65,10 +65,10 @@ async function loadData() {
             .filter(coin => coin. symbol.endsWith('USDT'))
             .map(coin => ({
                 symbol:  coin.symbol.replace('USDT', ''),
-                price:  parseFloat(coin.lastPrice),
+                price: parseFloat(coin.lastPrice),
                 change: parseFloat(coin.priceChangePercent),
                 high: parseFloat(coin.highPrice),
-                low: parseFloat(coin. lowPrice),
+                low: parseFloat(coin.lowPrice),
                 volume: parseFloat(coin.volume),
                 ath: null,
                 atl: null
@@ -140,7 +140,7 @@ async function loadData() {
         if (loading) loading.style.display = 'none';
         if (table) table.style.display = 'block';
         
-        console.log('Data loaded successfully!');
+        console.log('Data loaded successfully! ');
 
     } catch (err) {
         console.error('Error loading data:', err);
@@ -179,7 +179,7 @@ function displayCoins(coins) {
     coins.forEach(coin => {
         const row = document.createElement('tr');
         
-        const changeClass = coin.change > 0 ? 'positive-change' : 
+        const changeClass = coin.change > 0 ? 'positive-change' :  
                            coin.change < 0 ? 'negative-change' : 'neutral-change';
         const changeSymbol = coin.change > 0 ? '+' : '';
 
@@ -221,7 +221,7 @@ function updateLastUpdateTime() {
     const timeString = now.toLocaleTimeString('tr-TR', { 
         hour: '2-digit', 
         minute: '2-digit',
-        second:  '2-digit'
+        second: '2-digit'
     });
     const element = document.getElementById('lastUpdate');
     if (element) {
@@ -248,9 +248,9 @@ function filterCoins() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
     
-    const searchTerm = searchInput.value. toUpperCase();
+    const searchTerm = searchInput.value.toUpperCase();
     
-    let filtered = coinsData.filter(coin => 
+    let filtered = coinsData. filter(coin => 
         coin.symbol.includes(searchTerm)
     );
 
