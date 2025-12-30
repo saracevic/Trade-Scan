@@ -129,76 +129,94 @@
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <p>Failed to load data. Please try again.</p>
+            <p>Failed to load data. Please try again. </p>
             <button onclick="loadData()" class="btn-retry">Retry</button>
         </div>
 
         <!-- Data Table -->
         <div class="table-wrapper glass">
-            <table id="coinsTable" class="data-table">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable('symbol')" class="sortable">
-                            <div>
-                                <span>Coin</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th onclick="sortTable('price')" class="sortable text-right">
-                            <div>
-                                <span>Price</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th onclick="sortTable('change')" class="sortable text-right">
-                            <div>
-                                <span>24h Change</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th onclick="sortTable('high')" class="sortable text-right">
-                            <div>
-                                <span>24h High</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th onclick="sortTable('low')" class="sortable text-right">
-                            <div>
-                                <span>24h Low</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th onclick="sortTable('ath')" class="sortable text-right hide-mobile">
-                            <div>
-                                <span>ATH 🔥</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                        <th onclick="sortTable('atl')" class="sortable text-right hide-mobile">
-                            <div>
-                                <span>ATL 📉</span>
-                                <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                                </svg>
-                            </div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody id="coinsBody">
-                </tbody>
-            </table>
+            <div class="table-scroll">
+                <table id="coinsTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('symbol')" class="sortable sticky-col">
+                                <div>
+                                    <span>Coin</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('price')" class="sortable text-right">
+                                <div>
+                                    <span>Price</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('change')" class="sortable text-right">
+                                <div>
+                                    <span>24h Change</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('high')" class="sortable text-right">
+                                <div>
+                                    <span>24h High</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('highPercent')" class="sortable text-right hide-tablet">
+                                <div>
+                                    <span>High %</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('low')" class="sortable text-right">
+                                <div>
+                                    <span>24h Low</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('lowPercent')" class="sortable text-right hide-tablet">
+                                <div>
+                                    <span>Low %</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('ath')" class="sortable text-right ath-col">
+                                <div>
+                                    <span>ATH 🔥</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                            <th onclick="sortTable('atl')" class="sortable text-right atl-col">
+                                <div>
+                                    <span>ATL 📉</span>
+                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                                    </svg>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="coinsBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Footer -->
