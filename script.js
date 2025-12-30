@@ -11,6 +11,7 @@ let sortDirection = {
 // Asian Range değerlerini sakla (haftalık güncellenir)
 let cachedAsianRanges = {};
 let lastAsianRangeUpdate = null;
+let isCalculatingAsianRange = false;
 
 // Sayfa yüklendiğinde
 window.addEventListener('load', () => {
@@ -98,7 +99,12 @@ function calculateAsianRangeFib(klines) {
     }
     
     if (thursdayCandles.length < 3) {
-        console.warn('Not enough Thursday data');
+        console.warn('Not enough Thursday data, using fallback');
+        // Fallback: son 5 saatlik data
+        thursdayCandles = klines.slice(-5);
+    }
+    
+    if (thursdayCandles.length === 0) {
         return null;
     }
     
@@ -124,9 +130,69 @@ function calculateAsianRangeFib(klines) {
     // 50% Fibonacci (midpoint)
     const asianRangeFib50 = (bodyHigh + bodyLow) / 2;
     
-    console.log(`✓ Asian Fib: High=${bodyHigh.toFixed(4)}, Low=${bodyLow.toFixed(4)}, 50%=${asianRangeFib50.toFixed(4)}, Candles=${thursdayCandles.length}`);
-    
     return asianRangeFib50;
+}
+
+// Tüm coinler için Asian Range hesapla (background'da çalışır)
+async function calculateAllAsianRanges(coins) {
+    if (isCalculatingAsianRange) {
+        console.log('Asian Range calculation already in progress...');
+        return;
+    }
+    
+    isCalculatingAsianRange = true;
+    console.log('🔄 Starting Asian Range calculation for all coins...');
+    
+    let calculated = 0;
+    const total = coins.length;
+    
+    // Her coin için sırayla hesapla (rate limit önlemi)
+    for (let i = 0; i < total; i++) {
+        const coin = coins[i];
+        
+        try {
+            const symbol = coin.symbol + 'USDT';
+            
+            // API isteği
+            const klineResponse = await fetch(
+                `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=336`
+            );
+            
+            if (klineResponse.ok) {
+                const klines = await klineResponse.json();
+                const asianFib = calculateAsianRangeFib(klines);
+                
+                if (asianFib && asianFib > 0) {
+                    cachedAsianRanges[coin.symbol] = asianFib;
+                    coin.asianRangeFib = asianFib;
+                    calculated++;
+                    
+                    // Her 10 hesaplamada bir güncelle
+                    if (calculated % 10 === 0) {
+                        console.log(`📊 Progress: ${calculated}/${total} (${((calculated/total)*100).toFixed(1)}%)`);
+                        // UI'ı güncelle
+                        displayCoins([...filteredCoins]);
+                        saveAsianRangesToCache();
+                    }
+                }
+            }
+            
+            // Rate limit için bekleme (50ms)
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+        } catch (err) {
+            console.warn(`❌ ${coin.symbol}: ${err.message}`);
+        }
+    }
+    
+    lastAsianRangeUpdate = new Date();
+    saveAsianRangesToCache();
+    isCalculatingAsianRange = false;
+    
+    console.log(`✅ Asian Range calculation completed: ${calculated}/${total} coins`);
+    
+    // Final update
+    displayCoins([...filteredCoins]);
 }
 
 // Verileri API'lerden çek
@@ -172,53 +238,6 @@ async function loadData() {
 
         console.log('Filtered coins:', futuresCoins.length);
 
-        // Asian Range güncelleme gerekli mi?
-        const needsUpdate = shouldUpdateAsianRange();
-        
-        if (needsUpdate) {
-            console.log('⏰ Updating Asian Range values (weekly update)...');
-            
-            const batchSize = 20;
-            const batches = [];
-            
-            for (let i = 0; i < Math.min(futuresCoins.length, 200); i += batchSize) {
-                batches.push(futuresCoins.slice(i, i + batchSize));
-            }
-            
-            for (const batch of batches) {
-                const promises = batch.map(async coin => {
-                    try {
-                        const symbol = coin.symbol + 'USDT';
-                        const klineResponse = await fetch(
-                            `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=336`,
-                            { timeout: 5000 }
-                        );
-                        
-                        if (klineResponse.ok) {
-                            const klines = await klineResponse.json();
-                            const asianFib = calculateAsianRangeFib(klines);
-                            
-                            if (asianFib && asianFib > 0) {
-                                coin.asianRangeFib = asianFib;
-                                cachedAsianRanges[coin.symbol] = asianFib;
-                            }
-                        }
-                    } catch (err) {
-                        console.warn(`❌ ${coin.symbol}: ${err.message}`);
-                    }
-                });
-                
-                await Promise.all(promises);
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            
-            lastAsianRangeUpdate = new Date();
-            saveAsianRangesToCache();
-            console.log(`✓ Asian Range updated for ${Object.keys(cachedAsianRanges).length} coins`);
-        } else {
-            console.log(`✓ Using cached Asian Range values from ${lastAsianRangeUpdate.toLocaleString()}`);
-        }
-
         coinsData = futuresCoins;
         filteredCoins = [...coinsData];
 
@@ -233,6 +252,21 @@ async function loadData() {
         if (table) table.style.display = 'block';
         
         console.log('Data loaded successfully!');
+
+        // Asian Range güncelleme gerekli mi?
+        const needsUpdate = shouldUpdateAsianRange();
+        
+        if (needsUpdate && !isCalculatingAsianRange) {
+            console.log('⏰ Starting Asian Range calculation in background...');
+            // Background'da hesapla (UI'ı bloklamadan)
+            setTimeout(() => {
+                calculateAllAsianRanges(coinsData);
+            }, 1000);
+        } else if (isCalculatingAsianRange) {
+            console.log('⏳ Asian Range calculation in progress...');
+        } else {
+            console.log(`✓ Using cached Asian Range values from ${lastAsianRangeUpdate.toLocaleString()}`);
+        }
 
     } catch (err) {
         console.error('Error loading data:', err);
@@ -274,7 +308,7 @@ function displayCoins(coins) {
                            coin.change < 0 ? 'negative-change' : 'neutral-change';
         const changeSymbol = coin.change > 0 ? '+' : '';
 
-        let asianFibDisplay = '<span style="color: var(--text-muted);">-</span>';
+        let asianFibDisplay = '<span style="color: var(--text-muted); font-size: 11px;">Calculating...</span>';
         let asianFibDistDisplay = '<span style="color: var(--text-muted);">-</span>';
         
         if (coin.asianRangeFib && coin.asianRangeFib > 0) {
@@ -409,6 +443,8 @@ function sortTable(column) {
 
 // Otomatik yenileme (60 saniye) - sadece fiyatları günceller
 setInterval(() => {
-    console.log('Auto-refresh: Updating prices only');
-    loadData();
+    if (!isCalculatingAsianRange) {
+        console.log('Auto-refresh: Updating prices only');
+        loadData();
+    }
 }, 60000);
