@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binance Perpetual Futures Pro Tracker</title>
+    <title>Binance Futures - Asian Range 50% Fib Tracker</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,10 +22,10 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo-section">
-                    <div class="logo-icon">₿</div>
+                    <div class="logo-icon">🌏</div>
                     <div class="logo-text">
-                        <h1>Binance Futures Pro</h1>
-                        <p class="tagline">Real-time Perpetual Market Tracker</p>
+                        <h1>Asian Range 50% Fib Tracker</h1>
+                        <p class="tagline">Friday's Asian Range Fibonacci Analysis</p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -119,7 +119,7 @@
         <!-- Loading State -->
         <div id="loading" class="loading-container">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Loading market data...</p>
+            <p class="loading-text">Loading market data and calculating Asian Range...</p>
         </div>
 
         <!-- Error State -->
@@ -149,7 +149,7 @@
                             </th>
                             <th onclick="sortTable('price')" class="sortable text-right">
                                 <div>
-                                    <span>Price</span>
+                                    <span>Current Price</span>
                                     <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 5v14M5 12l7 7 7-7"/>
                                     </svg>
@@ -163,52 +163,17 @@
                                     </svg>
                                 </div>
                             </th>
-                            <th onclick="sortTable('high')" class="sortable text-right">
+                            <th onclick="sortTable('asianRangeFib')" class="sortable text-right asian-col">
                                 <div>
-                                    <span>24h High</span>
+                                    <span>🌏 Asian Range 50% Fib</span>
                                     <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12 5v14M5 12l7 7 7-7"/>
                                     </svg>
                                 </div>
                             </th>
-                            <th onclick="sortTable('highPercent')" class="sortable text-right hide-tablet">
+                            <th class="text-right">
                                 <div>
-                                    <span>High %</span>
-                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                                    </svg>
-                                </div>
-                            </th>
-                            <th onclick="sortTable('low')" class="sortable text-right">
-                                <div>
-                                    <span>24h Low</span>
-                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                                    </svg>
-                                </div>
-                            </th>
-                            <th onclick="sortTable('lowPercent')" class="sortable text-right hide-tablet">
-                                <div>
-                                    <span>Low %</span>
-                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                                    </svg>
-                                </div>
-                            </th>
-                            <th onclick="sortTable('ath')" class="sortable text-right ath-col">
-                                <div>
-                                    <span>ATH 🔥</span>
-                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                                    </svg>
-                                </div>
-                            </th>
-                            <th onclick="sortTable('atl')" class="sortable text-right atl-col">
-                                <div>
-                                    <span>ATL 📉</span>
-                                    <svg class="sort-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                                    </svg>
+                                    <span>Distance from Fib</span>
                                 </div>
                             </th>
                         </tr>
@@ -222,8 +187,8 @@
         <!-- Footer -->
         <footer class="footer">
             <div class="footer-content">
-                <p class="footer-main">⚡ Powered by <strong>Binance Futures API</strong> & <strong>CoinGecko</strong></p>
-                <p class="footer-disclaimer">⚠️ This is not financial advice. Always do your own research (DYOR).</p>
+                <p class="footer-main">⚡ Powered by <strong>Binance Futures API</strong></p>
+                <p class="footer-disclaimer">🌏 Asian Range: Friday's body high/low midline (50% Fibonacci) | ⚠️ This is not financial advice. DYOR.</p>
             </div>
         </footer>
     </div>
