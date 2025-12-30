@@ -5,12 +5,7 @@ let sortDirection = {
     symbol: 1,
     price: 1,
     change: 1,
-    high: 1,
-    highPercent: 1,
-    low: 1,
-    lowPercent: 1,
-    ath: 1,
-    atl: 1
+    asianRangeFib: 1
 };
 
 // Sayfa yüklendiğinde
@@ -29,6 +24,42 @@ function updateMarketStatus() {
     }
 }
 
+// Asian Range %50 Fib hesapla (Cuma verisi)
+function calculateAsianRangeFib(klines) {
+    if (!klines || klines.length === 0) return null;
+    
+    // Son Cuma gününü bul (dayOfWeek = 5)
+    let fridayCandles = [];
+    
+    for (let i = klines.length - 1; i >= 0; i--) {
+        const date = new Date(klines[i][0]);
+        if (date.getUTCDay() === 5) { // 5 = Cuma
+            fridayCandles.push(klines[i]);
+        }
+        // Yeterli Cuma verisi toplandıysa dur
+        if (fridayCandles.length >= 24) break; // 24 saatlik veri
+    }
+    
+    if (fridayCandles.length === 0) return null;
+    
+    // Body High/Low hesapla (open ve close arasındaki max/min)
+    let bodyHigh = -Infinity;
+    let bodyLow = Infinity;
+    
+    fridayCandles.forEach(candle => {
+        const open = parseFloat(candle[1]);
+        const close = parseFloat(candle[4]);
+        
+        bodyHigh = Math.max(bodyHigh, Math.max(open, close));
+        bodyLow = Math.min(bodyLow, Math.min(open, close));
+    });
+    
+    // %50 Fib (midline)
+    const asianRangeFib50 = (bodyHigh + bodyLow) / 2;
+    
+    return asianRangeFib50;
+}
+
 // Verileri API'lerden çek
 async function loadData() {
     const loading = document.getElementById('loading');
@@ -42,13 +73,12 @@ async function loadData() {
     if (table) table.style.display = 'none';
 
     try {
-        // Timeout ekle (15 saniye)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         console.log('Fetching Binance data...');
         
-        // Binance Futures API
+        // Binance Futures 24hr ticker
         const binanceResponse = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr', {
             signal: controller.signal
         });
@@ -62,84 +92,46 @@ async function loadData() {
         const binanceData = await binanceResponse.json();
         console.log('Binance data received:', binanceData.length, 'items');
         
-        // USDT perpetual futures filtrele ve yüzdeleri hesapla
+        // USDT perpetual futures filtrele
         const futuresCoins = binanceData
             .filter(coin => coin.symbol.endsWith('USDT'))
-            .map(coin => {
-                const currentPrice = parseFloat(coin.lastPrice);
-                const high = parseFloat(coin.highPrice);
-                const low = parseFloat(coin.lowPrice);
-                
-                // High ve Low için yüzde hesapla
-                const highPercent = high > 0 ? ((high - currentPrice) / currentPrice) * 100 : 0;
-                const lowPercent = low > 0 ? ((currentPrice - low) / currentPrice) * 100 : 0;
-                
-                return {
-                    symbol: coin.symbol.replace('USDT', ''),
-                    price: currentPrice,
-                    change: parseFloat(coin.priceChangePercent),
-                    high: high,
-                    highPercent: highPercent,
-                    low: low,
-                    lowPercent: lowPercent,
-                    volume: parseFloat(coin.volume),
-                    ath: null,
-                    atl: null
-                };
-            });
+            .map(coin => ({
+                symbol: coin.symbol.replace('USDT', ''),
+                price: parseFloat(coin.lastPrice),
+                change: parseFloat(coin.priceChangePercent),
+                volume: parseFloat(coin.volume),
+                asianRangeFib: null // Asian Range için placeholder
+            }));
 
         console.log('Filtered coins:', futuresCoins.length);
 
-        // CoinGecko API (ATH/ATL için) - Hata olsa bile devam et
-        const coinGeckoMap = {
-            'BTC': 'bitcoin', 'ETH': 'ethereum', 'BNB': 'binancecoin',
-            'XRP': 'ripple', 'ADA': 'cardano', 'DOGE': 'dogecoin',
-            'SOL': 'solana', 'TRX': 'tron', 'DOT': 'polkadot',
-            'MATIC': 'matic-network', 'LTC': 'litecoin', 'SHIB': 'shiba-inu',
-            'AVAX': 'avalanche-2', 'UNI': 'uniswap', 'LINK': 'chainlink',
-            'ATOM': 'cosmos', 'XLM': 'stellar', 'ETC': 'ethereum-classic',
-            'BCH': 'bitcoin-cash', 'NEAR': 'near', 'APT': 'aptos',
-            'FIL': 'filecoin', 'ARB': 'arbitrum', 'OP': 'optimism',
-            'INJ': 'injective-protocol', 'SUI': 'sui', 'PEPE': 'pepe',
-            'WLD': 'worldcoin-wld', 'IMX': 'immutable-x', 'FET': 'fetch-ai',
-            'RUNE': 'thorchain', 'GALA': 'gala', 'SAND': 'the-sandbox'
-        };
-
-        const coinGeckoIds = Object.values(coinGeckoMap).join(',');
+        // Asian Range %50 Fib hesaplamaları (paralel)
+        console.log('Calculating Asian Range 50% Fib for all pairs...');
         
-        try {
-            console.log('Fetching CoinGecko data...');
-            const geckoController = new AbortController();
-            const geckoTimeoutId = setTimeout(() => geckoController.abort(), 8000);
-
-            const geckoResponse = await fetch(
-                `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinGeckoIds}&order=market_cap_desc&sparkline=false`,
-                { signal: geckoController.signal }
-            );
-            
-            clearTimeout(geckoTimeoutId);
-
-            if (geckoResponse.ok) {
-                const geckoData = await geckoResponse.json();
-                console.log('CoinGecko data received:', geckoData.length, 'items');
+        const asianRangePromises = futuresCoins.slice(0, 50).map(async coin => {
+            try {
+                // Son 7 günlük 1 saatlik kline verisi (Cuma'yı yakalamak için)
+                const symbol = coin.symbol + 'USDT';
+                const klineResponse = await fetch(
+                    `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=168`
+                );
                 
-                geckoData.forEach(geckoCoin => {
-                    const symbol = Object.keys(coinGeckoMap).find(
-                        key => coinGeckoMap[key] === geckoCoin.id
-                    );
+                if (klineResponse.ok) {
+                    const klines = await klineResponse.json();
+                    const asianFib = calculateAsianRangeFib(klines);
                     
-                    if (symbol) {
-                        const coin = futuresCoins.find(c => c.symbol === symbol);
-                        if (coin) {
-                            coin.ath = geckoCoin.ath;
-                            coin.atl = geckoCoin.atl;
-                        }
+                    const coinData = futuresCoins.find(c => c.symbol === coin.symbol);
+                    if (coinData) {
+                        coinData.asianRangeFib = asianFib;
                     }
-                });
+                }
+            } catch (err) {
+                console.warn(`Asian Range calculation failed for ${coin.symbol}:`, err.message);
             }
-        } catch (geckoError) {
-            console.warn('CoinGecko data unavailable (continuing without ATH/ATL):', geckoError.message);
-        }
+        });
+
+        // İlk 50 coin için Asian Range hesapla (API limitinden dolayı)
+        await Promise.all(asianRangePromises);
 
         coinsData = futuresCoins;
         filteredCoins = [...coinsData];
@@ -164,7 +156,6 @@ async function loadData() {
         if (loading) loading.style.display = 'none';
         if (error) {
             error.style.display = 'block';
-            // Hata mesajını güncelle
             const errorText = error.querySelector('p');
             if (errorText) {
                 if (err.name === 'AbortError') {
@@ -188,7 +179,7 @@ function displayCoins(coins) {
     tbody.innerHTML = '';
 
     if (coins.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: var(--text-secondary);">No coins found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-secondary);">No coins found</td></tr>';
         return;
     }
 
@@ -199,24 +190,26 @@ function displayCoins(coins) {
                            coin.change < 0 ? 'negative-change' : 'neutral-change';
         const changeSymbol = coin.change > 0 ? '+' : '';
 
-        // High ve Low percent için class
-        const highPercentClass = coin.highPercent > 0 ? 'positive-change' : 'neutral-change';
-        const lowPercentClass = coin.lowPercent > 0 ? 'positive-change' : 'neutral-change';
-
-        // ATH ve ATL gösterimi
-        const athDisplay = coin.ath ? `<span class="ath-value">$${formatNumber(coin.ath)}</span>` : '<span style="color: var(--text-muted);">-</span>';
-        const atlDisplay = coin.atl ? `<span class="atl-value">$${formatNumber(coin.atl)}</span>` : '<span style="color: var(--text-muted);">-</span>';
+        // Asian Range Fib gösterimi
+        let asianFibDisplay = '<span style="color: var(--text-muted);">-</span>';
+        let asianFibDistDisplay = '<span style="color: var(--text-muted);">-</span>';
+        
+        if (coin.asianRangeFib) {
+            asianFibDisplay = `<span class="asian-fib-value">$${formatNumber(coin.asianRangeFib)}</span>`;
+            
+            // Fiyat ile Asian Range Fib arasındaki mesafe
+            const distPercent = ((coin.price - coin.asianRangeFib) / coin.asianRangeFib) * 100;
+            const distClass = distPercent > 0 ? 'positive-change' : 'negative-change';
+            const distSymbol = distPercent > 0 ? '+' : '';
+            asianFibDistDisplay = `<span class="percent-badge ${distClass}">${distSymbol}${distPercent.toFixed(2)}%</span>`;
+        }
 
         row.innerHTML = `
             <td class="sticky-col"><div class="coin-symbol">${coin.symbol}</div></td>
             <td class="text-right price">$${formatNumber(coin.price)}</td>
             <td class="text-right"><span class="change ${changeClass}">${changeSymbol}${coin.change.toFixed(2)}%</span></td>
-            <td class="text-right">$${formatNumber(coin.high)}</td>
-            <td class="text-right hide-tablet"><span class="percent-badge ${highPercentClass}">+${coin.highPercent.toFixed(2)}%</span></td>
-            <td class="text-right">$${formatNumber(coin.low)}</td>
-            <td class="text-right hide-tablet"><span class="percent-badge ${lowPercentClass}">+${coin.lowPercent.toFixed(2)}%</span></td>
-            <td class="text-right">${athDisplay}</td>
-            <td class="text-right">${atlDisplay}</td>
+            <td class="text-right asian-col">${asianFibDisplay}</td>
+            <td class="text-right">${asianFibDistDisplay}</td>
         `;
 
         tbody.appendChild(row);
@@ -298,7 +291,6 @@ function filterByChange(type) {
         btn.classList.remove('active');
     });
     
-    // Event'ten gelen butonu bul ve aktif yap
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => {
         if ((type === 'all' && btn.textContent.includes('All')) ||
