@@ -15,7 +15,7 @@ let isCalculatingAsianRange = false;
 
 // Sayfa yüklendiğinde
 window.addEventListener('load', () => {
-    console.log('Page loaded, starting data fetch...');
+    console.log('🚀 Page loaded, starting initialization...');
     loadCachedAsianRanges();
     loadData();
     updateMarketStatus();
@@ -25,7 +25,7 @@ window.addEventListener('load', () => {
 function updateMarketStatus() {
     const statusElement = document.getElementById('marketStatus');
     if (statusElement) {
-        statusElement. textContent = 'LIVE';
+        statusElement.textContent = 'LIVE';
         statusElement.style.color = 'var(--color-positive)';
     }
 }
@@ -39,10 +39,15 @@ function loadCachedAsianRanges() {
         if (stored && storedDate) {
             cachedAsianRanges = JSON.parse(stored);
             lastAsianRangeUpdate = new Date(storedDate);
-            console.log(`✓ Loaded ${Object.keys(cachedAsianRanges).length} cached Asian Ranges from ${lastAsianRangeUpdate. toLocaleString()}`);
+            console.log(`✅ Loaded ${Object.keys(cachedAsianRanges).length} cached Asian Ranges from ${lastAsianRangeUpdate. toLocaleString()}`);
+        } else {
+            console.log('ℹ️ No cached Asian Ranges found');
         }
     } catch (err) {
-        console.warn('Failed to load cached Asian Ranges:', err);
+        console.warn('⚠️ Failed to load cached Asian Ranges:', err);
+        // Hatalı cache'i temizle
+        localStorage.removeItem('asianRanges');
+        localStorage.removeItem('asianRangeDate');
     }
 }
 
@@ -51,9 +56,9 @@ function saveAsianRangesToCache() {
     try {
         localStorage.setItem('asianRanges', JSON.stringify(cachedAsianRanges));
         localStorage.setItem('asianRangeDate', new Date().toISOString());
-        console.log(`✓ Saved ${Object. keys(cachedAsianRanges).length} Asian Ranges to cache`);
+        console.log(`💾 Saved ${Object.keys(cachedAsianRanges).length} Asian Ranges to cache`);
     } catch (err) {
-        console.warn('Failed to save Asian Ranges:', err);
+        console.warn('⚠️ Failed to save Asian Ranges:', err);
     }
 }
 
@@ -71,9 +76,8 @@ function shouldUpdateAsianRange() {
 }
 
 // Asian Range %50 Fib hesapla (SABİT - Perşembe 19:00-00:00 New York saati)
-// BU DEĞER SABİTTİR VE DEĞİŞMEZ! 
 function calculateAsianRangeFib(klines) {
-    if (! klines || klines.length === 0) return null;
+    if (!klines || klines.length === 0) return null;
     
     // Son Perşembe'yi bul (New York saatine göre 19:00-00:00)
     let thursdayCandles = [];
@@ -86,9 +90,9 @@ function calculateAsianRangeFib(klines) {
         // UTC saatini New York saatine çevir (UTC-5)
         const nyHour = (date.getUTCHours() - 5 + 24) % 24;
         const nyDate = new Date(date.getTime() - (5 * 60 * 60 * 1000));
-        const nyDayOfWeek = nyDate. getDay();
+        const nyDayOfWeek = nyDate.getDay();
         
-        // Perşembe günü (4) ve NY saati 19:00-23:59 (00:00'a kadar)
+        // Perşembe günü (4) ve NY saati 19:00-23:59
         if (nyDayOfWeek === 4) {
             foundThursday = true;
             if (nyHour >= 19 && nyHour <= 23) {
@@ -100,9 +104,8 @@ function calculateAsianRangeFib(klines) {
     }
     
     if (thursdayCandles.length < 3) {
-        console.warn('Not enough Thursday data, using fallback');
-        // Fallback: son 5 saatlik data
-        thursdayCandles = klines.slice(-5);
+        console.warn(`⚠️ Not enough Thursday data (${thursdayCandles.length} candles), using fallback`);
+        thursdayCandles = klines. slice(-5);
     }
     
     if (thursdayCandles.length === 0) {
@@ -128,35 +131,36 @@ function calculateAsianRangeFib(klines) {
         return null;
     }
     
-    // 50% Fibonacci (midpoint) - BU DEĞER SABİTTİR! 
+    // 50% Fibonacci (midpoint)
     const asianRangeFib50 = (bodyHigh + bodyLow) / 2;
     
     return asianRangeFib50;
 }
 
-// Tüm coinler için Asian Range hesapla (background'da çalışır)
+// Tüm coinler için Asian Range hesapla
 async function calculateAllAsianRanges(coins) {
     if (isCalculatingAsianRange) {
-        console.log('Asian Range calculation already in progress...');
+        console.log('⏳ Asian Range calculation already in progress...');
         return;
     }
     
     isCalculatingAsianRange = true;
-    console.log('🔄 Starting Asian Range calculation for all coins...');
+    console.log(`🔄 Starting Asian Range calculation for ${coins.length} coins... `);
     
     let calculated = 0;
+    let failed = 0;
     const total = coins.length;
     
-    // Her coin için sırayla hesapla (rate limit önlemi)
     for (let i = 0; i < total; i++) {
         const coin = coins[i];
         
         try {
             const symbol = coin.symbol + 'USDT';
             
-            // API isteği - 14 günlük data (336 saat)
+            // API isteği
             const klineResponse = await fetch(
-                `https://fapi.binance.com/fapi/v1/klines? symbol=${symbol}&interval=1h&limit=336`
+                `https://fapi.binance.com/fapi/v1/klines? symbol=${symbol}&interval=1h&limit=336`,
+                { timeout: 5000 }
             );
             
             if (klineResponse.ok) {
@@ -171,18 +175,22 @@ async function calculateAllAsianRanges(coins) {
                     // Her 10 hesaplamada bir güncelle
                     if (calculated % 10 === 0) {
                         console.log(`📊 Progress: ${calculated}/${total} (${((calculated/total)*100).toFixed(1)}%)`);
-                        // UI'ı güncelle
                         displayCoins([... filteredCoins]);
                         saveAsianRangesToCache();
                     }
+                } else {
+                    failed++;
                 }
+            } else {
+                failed++;
             }
             
-            // Rate limit için bekleme (60ms - daha güvenli)
-            await new Promise(resolve => setTimeout(resolve, 60));
+            // Rate limit için bekleme
+            await new Promise(resolve => setTimeout(resolve, 50));
             
         } catch (err) {
-            console.warn(`❌ ${coin.symbol}: ${err.message}`);
+            console.warn(`❌ ${coin.symbol}:  ${err.message}`);
+            failed++;
         }
     }
     
@@ -190,19 +198,19 @@ async function calculateAllAsianRanges(coins) {
     saveAsianRangesToCache();
     isCalculatingAsianRange = false;
     
-    console. log(`✅ Asian Range calculation completed:  ${calculated}/${total} coins`);
+    console.log(`✅ Asian Range calculation completed:  ${calculated} success, ${failed} failed`);
     
     // Final update
     displayCoins([...filteredCoins]);
 }
 
-// Verileri API'lerden çek
+// Verileri API'den çek
 async function loadData() {
     const loading = document.getElementById('loading');
     const error = document.getElementById('error');
-    const table = document.querySelector('. table-wrapper');
+    const table = document.querySelector('.table-wrapper');
     
-    console.log('Loading data...');
+    console.log('📡 Loading data from Binance API...');
     
     if (loading) loading.style.display = 'block';
     if (error) error.style.display = 'none';
@@ -212,8 +220,6 @@ async function loadData() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        console.log('Fetching Binance data...');
-        
         const binanceResponse = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr', {
             signal: controller.signal
         });
@@ -225,22 +231,22 @@ async function loadData() {
         }
 
         const binanceData = await binanceResponse. json();
-        console.log('Binance data received:', binanceData. length, 'items');
+        console.log(`📦 Received ${binanceData.length} coins from Binance`);
         
+        // USDT çiftlerini filtrele, volume'e göre sırala, TOP 200 al
         const futuresCoins = binanceData
             .filter(coin => coin. symbol.endsWith('USDT'))
             .map(coin => ({
-                symbol: coin.symbol. replace('USDT', ''),
+                symbol:  coin.symbol. replace('USDT', ''),
                 price: parseFloat(coin. lastPrice),
                 change: parseFloat(coin.priceChangePercent),
                 volume: parseFloat(coin.volume),
                 asianRangeFib: cachedAsianRanges[coin.symbol. replace('USDT', '')] || null
             }))
-            // Volume'e göre sırala ve TOP 200'ü al
             .sort((a, b) => b.volume - a.volume)
-            .slice(0, 200); // TOP 200 COIN ile sınırla
+            .slice(0, 200);
 
-        console.log('Filtered to TOP 200 coins:', futuresCoins.length);
+        console.log(`✅ Filtered to TOP 200 coins (by volume)`);
 
         coinsData = futuresCoins;
         filteredCoins = [... coinsData];
@@ -249,6 +255,7 @@ async function loadData() {
         coinsData.sort((a, b) => b.change - a.change);
         filteredCoins. sort((a, b) => b.change - a.change);
 
+        // UI'ı göster
         displayCoins(filteredCoins);
         updateStats(coinsData);
         updateLastUpdateTime();
@@ -256,25 +263,27 @@ async function loadData() {
         if (loading) loading.style.display = 'none';
         if (table) table.style.display = 'block';
         
-        console.log('Data loaded successfully! ');
+        console.log('✅ Data loaded successfully! ');
 
-        // Asian Range güncelleme gerekli mi? 
+        // Asian Range hesaplama gerekli mi?
         const needsUpdate = shouldUpdateAsianRange();
+        const coinsWithoutFib = coinsData.filter(c => !c.asianRangeFib || c.asianRangeFib === null).length;
         
-        if (needsUpdate && !isCalculatingAsianRange) {
+        console.log(`📊 Coins without Asian Range: ${coinsWithoutFib}/${coinsData.length}`);
+        
+        if ((needsUpdate || coinsWithoutFib > 50) && !isCalculatingAsianRange) {
             console.log('⏰ Starting Asian Range calculation in background...');
-            // Background'da hesapla (UI'ı bloklamadan)
             setTimeout(() => {
                 calculateAllAsianRanges(coinsData);
             }, 1000);
         } else if (isCalculatingAsianRange) {
-            console.log('⏳ Asian Range calculation in progress...');
+            console.log('⏳ Asian Range calculation already in progress...');
         } else {
-            console.log(`✓ Using cached Asian Range values from ${lastAsianRangeUpdate.toLocaleString()}`);
+            console.log(`✓ Using cached Asian Range values (${Object.keys(cachedAsianRanges).length} coins)`);
         }
 
     } catch (err) {
-        console.error('Error loading data:', err);
+        console.error('❌ Error loading data:', err);
         
         if (loading) loading.style.display = 'none';
         if (error) {
@@ -282,7 +291,7 @@ async function loadData() {
             const errorText = error.querySelector('p');
             if (errorText) {
                 if (err.name === 'AbortError') {
-                    errorText. textContent = '⏱️ Request timeout.  Please check your connection and try again.';
+                    errorText.textContent = '⏱️ Request timeout.  Please check your connection and try again.';
                 } else {
                     errorText. textContent = `❌ ${err.message}.  Please try again.`;
                 }
@@ -295,7 +304,7 @@ async function loadData() {
 function displayCoins(coins) {
     const tbody = document.getElementById('coinsBody');
     if (!tbody) {
-        console.error('Table body not found! ');
+        console.error('❌ Table body not found! ');
         return;
     }
     
@@ -310,7 +319,7 @@ function displayCoins(coins) {
         const row = document.createElement('tr');
         
         const changeClass = coin.change > 0 ? 'positive-change' : 
-                           coin.change < 0 ? 'negative-change' : 'neutral-change';
+                           coin.change < 0 ?  'negative-change' : 'neutral-change';
         const changeSymbol = coin.change > 0 ? '+' : '';
 
         let asianFibDisplay = '<span style="color: var(--text-muted); font-size: 11px;">Calculating...</span>';
@@ -323,7 +332,7 @@ function displayCoins(coins) {
             const distClass = distPercent >= 0 ? 'positive-change' : 'negative-change';
             const distSymbol = distPercent >= 0 ? '+' : '';
             
-            asianFibDistDisplay = `<span class="percent-badge ${distClass}">${distSymbol}${distPercent.toFixed(2)}%</span>`;
+            asianFibDistDisplay = `<span class="percent-badge ${distClass}">${distSymbol}${distPercent. toFixed(2)}%</span>`;
         }
 
         row.innerHTML = `
@@ -346,7 +355,7 @@ function updateStats(coins) {
     if (totalElement) totalElement.textContent = coins.length;
     
     const positive = coins.filter(c => c.change > 0).length;
-    const negative = coins.filter(c => c.change < 0).length;
+    const negative = coins. filter(c => c.change < 0).length;
     
     if (positiveElement) positiveElement.textContent = positive;
     if (negativeElement) negativeElement.textContent = negative;
@@ -446,10 +455,10 @@ function sortTable(column) {
     displayCoins(filteredCoins);
 }
 
-// Otomatik yenileme (60 saniye) - SADECE FİYATLARI GÜNCELLER, Asian Range DEĞİŞMEZ! 
+// Otomatik yenileme (60 saniye)
 setInterval(() => {
     if (! isCalculatingAsianRange) {
-        console.log('Auto-refresh:  Updating prices only (Asian Range remains FIXED)');
+        console.log('🔄 Auto-refresh:  Updating prices (Asian Range stays FIXED)');
         loadData();
     }
 }, 60000);
