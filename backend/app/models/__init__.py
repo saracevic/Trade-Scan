@@ -39,12 +39,12 @@ class ATHATLData(BaseModel):
     atl_date: Optional[datetime] = Field(None, description="ATL date")
     current_price: float = Field(..., description="Current price", gt=0)
     
-    @field_validator('ath')
+    @field_validator('atl')
     @classmethod
-    def validate_ath_greater_than_atl(cls, v, info):
-        """Ensure ATH is greater than ATL."""
-        if 'atl' in info.data and v <= info.data['atl']:
-            raise ValueError('ATH must be greater than ATL')
+    def validate_atl_less_than_ath(cls, v, info):
+        """Ensure ATL is less than ATH."""
+        if 'ath' in info.data and v >= info.data['ath']:
+            raise ValueError('ATL must be less than ATH')
         return v
     
     class Config:

@@ -18,7 +18,7 @@ class Config:
 
     # Flask Configuration
     FLASK_ENV: str = os.getenv("FLASK_ENV", "development")
-    DEBUG: bool = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+    DEBUG: bool = os.getenv("FLASK_DEBUG", "False" if os.getenv("FLASK_ENV") == "production" else "True").lower() == "true"
     
     # Server Configuration
     HOST: str = os.getenv("HOST", "0.0.0.0")

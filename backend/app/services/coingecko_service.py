@@ -101,7 +101,13 @@ class CoinGeckoService:
                 if response.status_code == 200:
                     return response.json()
                 elif response.status_code == 429:  # Too Many Requests
-                    wait_time = 60
+                    # Check for Retry-After header
+                    retry_after = response.headers.get('Retry-After', '60')
+                    try:
+                        wait_time = int(retry_after)
+                    except ValueError:
+                        wait_time = 60
+                    
                     logger.warning(
                         f"Rate limited by CoinGecko. "
                         f"Waiting {wait_time}s (attempt {attempt + 1}/{retry_count})"
